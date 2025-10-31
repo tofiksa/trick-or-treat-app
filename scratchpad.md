@@ -215,8 +215,18 @@ This is a mobile-first web application designed for a Halloween trick-or-treatin
     - Add map view toggle/button in dashboard or competition view
     - Success criteria: Map displays with all group check-ins, markers are color-coded by group, map is mobile-friendly, check-ins update in real-time
 
+24. **Create public results page with timeline feed**
+    - Create /results page route that is publicly accessible (no authentication required)
+    - Create TimelineFeed component with Facebook news feed-inspired design
+    - Fetch all photos with check-in and user data
+    - Display photos in chronological order (newest first)
+    - Show user avatar, name, group, and timestamp for each photo
+    - Style timeline with card-based layout similar to Facebook feed
+    - Add navigation link to results page from homepage
+    - Success criteria: Public page accessible at /results, displays all uploaded photos in timeline format, shows user information, updates automatically, mobile-responsive
+
 ### Phase 8: Testing & Deployment
-24. **Testing**
+25. **Testing**
     - Test GPS accuracy in real-world conditions
     - Test photo uploads on various devices
     - Test group switching edge cases
@@ -226,13 +236,13 @@ This is a mobile-first web application designed for a Halloween trick-or-treatin
     - Test map visualization on mobile devices
     - Success criteria: All features work as expected, edge cases handled, theme works in different environments
 
-25. **Deploy to Vercel**
+26. **Deploy to Vercel**
     - Configure Vercel project
     - Set environment variables
     - Deploy and verify
     - Success criteria: App deploys successfully, accessible via URL, all features work in production
 
-26. **Final polish & bug fixes**
+27. **Final polish & bug fixes**
     - Fix any production issues
     - Optimize performance
     - Add loading states and error messages
@@ -263,9 +273,10 @@ This is a mobile-first web application designed for a Halloween trick-or-treatin
 | 18 | Add PWA capabilities (optional) | pending | Optional enhancement - not implemented yet |
 | 22 | Implement avatar selection for users | completed | ✅ Avatar field added to users table, AvatarSelector component created, avatars displayed in login and dashboard |
 | 23 | Implement map visualization for group check-ins | completed | ✅ MapView component created with react-leaflet, displays check-ins color-coded by group, shows user avatars on markers |
-| 24 | Testing | pending | ⚠️ Requires Supabase setup first. Need to test GPS, photo uploads, distance calculations, real-world scenarios |
-| 25 | Deploy to Vercel | pending | ⚠️ Requires Supabase setup and env vars configured first |
-| 26 | Final polish & bug fixes | pending | ⚠️ Will be done after testing phase |
+| 24 | Create public results page with timeline | completed | ✅ Results page at /results with Facebook-style timeline feed showing all uploaded photos |
+| 25 | Testing | pending | ⚠️ Requires Supabase setup first. Need to test GPS, photo uploads, distance calculations, real-world scenarios |
+| 26 | Deploy to Vercel | pending | ⚠️ Requires Supabase setup and env vars configured first |
+| 27 | Final polish & bug fixes | pending | ⚠️ Will be done after testing phase |
 
 ## Executor's Feedback or Assistance Requests
 
@@ -299,6 +310,23 @@ This is a mobile-first web application designed for a Halloween trick-or-treatin
 - Map markers show latest 100 check-ins for performance
 - Custom div icons with group colors and user avatars
 - Map handles empty state with default center (Oslo, Norway)
+
+**Results Page Feature (Task 24):**
+- ✅ Created public results page at /results route (app/results/page.tsx)
+- ✅ Created TimelineFeed component (components/TimelineFeed.tsx) with Facebook-style design:
+  - Card-based layout similar to Facebook news feed
+  - User avatar and name in header
+  - Full-width images with lazy loading
+  - Relative timestamps (e.g., "for 2 timer siden")
+  - Group name displayed below user name
+  - Check-in location coordinates shown in footer
+  - Auto-refreshes every 30 seconds
+- ✅ Fetches all photos with check-in and user data using Supabase joins
+- ✅ Displays photos in chronological order (newest first)
+- ✅ Handles empty state and error states gracefully
+- ✅ Added navigation link to results page from homepage
+- ✅ Page is publicly accessible (no authentication required)
+- ✅ Mobile-responsive design
 
 **⚠️ Manual Steps Required:**
 - User needs to run migration 004_add_avatar_to_users.sql in Supabase SQL Editor
