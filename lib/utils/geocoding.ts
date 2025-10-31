@@ -101,7 +101,9 @@ export async function reverseGeocode(
     // Limit cache size to prevent memory issues (keep last 1000 entries)
     if (locationCache.size > 1000) {
       const firstKey = locationCache.keys().next().value;
-      locationCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        locationCache.delete(firstKey);
+      }
     }
 
     return locationName;
