@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { reverseGeocode } from '@/lib/utils/geocoding';
 import dynamic from 'next/dynamic';
 
 // Dynamically import MapContainer to avoid SSR issues with Leaflet
@@ -33,6 +34,7 @@ interface CheckinMarker {
   user_name: string;
   user_avatar: string | null;
   group_name: string;
+  location_name?: string | null;
 }
 
 export default function MapView() {
@@ -90,9 +92,13 @@ export default function MapView() {
           user_name: checkin.users?.name || 'Ukjent',
           user_avatar: checkin.users?.avatar || '🎃',
           group_name: checkin.users?.groups?.name || 'Ukjent lag',
+          location_name: null, // Will be loaded asynchronously
         }));
 
         setCheckins(markers);
+        
+        // Load location names asynchronously (don't block UI)
+        loadLocationNames(markers);
       }
     } catch (err: any) {
       console.error('Error loading check-ins:', err);
@@ -128,6 +134,26 @@ export default function MapView() {
     centerLat = sumLat / checkins.length;
     centerLng = sumLng / checkins.length;
   }
+
+  const loadLocationNames = async (markers: CheckinMarker[]) => {
+    // Only geocode visible markers (limit to first 50 for performance)
+    const markersToGeocode = markers.slice(0, 50);
+    
+    for (const marker of markersToGeocode) {
+      try {
+        const locationName = await reverseGeocode(marker.latitude, marker.longitude);
+        
+        // Update the specific marker with location name
+        setCheckins((prevCheckins) =>
+          prevCheckins.map((c) =>
+            c.id === marker.id ? { ...c, location_name: locationName } : c
+          )
+        );
+      } catch (error) {
+        console.error(`Error geocoding location for marker ${marker.id}:`, error);
+      }
+    }
+  };
 
   // Get group colors
   const getGroupColor = (groupName: string): string => {
@@ -188,6 +214,15 @@ export default function MapView() {
                       <div className="text-gray-600 text-xs mt-1">
                         {checkin.group_name}
                       </div>
+                      {checkin.location_name ? (
+                        <div className="text-gray-700 text-xs mt-2 pt-2 border-t border-gray-200 font-medium">
+                          📍 {checkin.location_name}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-200 italic">
+                          Laster lokasjon...
+                        </div>
+                      )}
                     </div>
                   </Popup>
                 </Marker>

@@ -29,6 +29,12 @@ export default function Home() {
               Kom i gang
             </Link>
             <Link
+              href="/results"
+              className="h-14 w-full rounded-xl border-2 border-purple-primary bg-transparent text-lg font-semibold text-purple-light transition-all hover:bg-purple-primary/20 active:scale-95 flex items-center justify-center"
+            >
+              📸 Se resultater
+            </Link>
+            <Link
               href="/dashboard"
               className="h-14 w-full rounded-xl border-2 border-purple-primary bg-transparent text-lg font-semibold text-purple-light transition-all hover:bg-purple-primary/20 active:scale-95 flex items-center justify-center"
             >
