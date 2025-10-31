@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  /* Halloween Theme Colors */
+  --background: #1a0d1a;
+  --foreground: #ff7518;
+  --orange-primary: #ff7518;
+  --orange-secondary: #ff9500;
+  --purple-primary: #6b2c91;
+  --purple-secondary: #8b3db8;
+  --black-primary: #0a0a0a;
+  --black-secondary: #1a0d1a;
+  --orange-light: #ffb84d;
+  --purple-light: #a855f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-orange-primary: var(--orange-primary);
+  --color-orange-secondary: var(--orange-secondary);
+  --color-purple-primary: var(--purple-primary);
+  --color-purple-secondary: var(--purple-secondary);
+  --color-black-primary: var(--black-primary);
+  --color-black-secondary: var(--black-secondary);
+  --color-orange-light: var(--orange-light);
+  --color-purple-light: var(--purple-light);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
