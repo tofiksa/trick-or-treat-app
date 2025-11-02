@@ -15,8 +15,8 @@
 4. Prepare final report summarizing identified bugs, fixes, and supporting evidence (tests, rationale).
 
 ## Project Status Board
-- [ready for review] Task 1: Geocoding rate-limit performance fix
-- [ ] Task 2: Check-in distance calculation edge case fix
+- [complete pending user confirmation] Task 1: Geocoding rate-limit performance fix
+- [ready for review] Task 2: Check-in distance calculation edge case fix
 - [ ] Task 3: Photo upload success feedback fix
 - [ ] Task 4: Final report compilation
 
@@ -25,3 +25,4 @@
 
 ## Lessons
 - Resetting module-level caches via dedicated helpers keeps asynchronous tests reliable.
+- Component tests require jsdom environment and aligned path aliases to mirror Next.js runtime.

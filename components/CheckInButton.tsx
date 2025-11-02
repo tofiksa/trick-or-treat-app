@@ -119,8 +119,13 @@ export default function CheckInButton({
 				// Continue anyway - we'll just set distance to 0
 			}
 
-			let distance_from_previous = 0;
-			if (lastCheckin?.latitude && lastCheckin?.longitude) {
+		let distance_from_previous = 0;
+		if (
+			lastCheckin?.latitude !== null &&
+			lastCheckin?.latitude !== undefined &&
+			lastCheckin?.longitude !== null &&
+			lastCheckin?.longitude !== undefined
+		) {
 				distance_from_previous = calculateDistance(
 					lastCheckin.latitude,
 					lastCheckin.longitude,
