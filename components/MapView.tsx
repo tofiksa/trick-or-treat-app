@@ -43,11 +43,25 @@ export default function MapView() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadCheckins();
-    const interval = setInterval(loadCheckins, 15000); // Refresh every 15 seconds
-    return () => clearInterval(interval);
-  }, []);
+  const loadLocationNames = async (markers: CheckinMarker[]) => {
+    // Only geocode visible markers (limit to first 50 for performance)
+    const markersToGeocode = markers.slice(0, 50);
+
+    for (const marker of markersToGeocode) {
+      try {
+        const locationName = await reverseGeocode(marker.latitude, marker.longitude);
+
+        // Update the specific marker with location name
+        setCheckins((prevCheckins) =>
+          prevCheckins.map((c) =>
+            c.id === marker.id ? { ...c, location_name: locationName } : c
+          )
+        );
+      } catch (error) {
+        console.error(`Error geocoding location for marker ${marker.id}:`, error);
+      }
+    }
+  };
 
   const loadCheckins = async () => {
     try {
@@ -108,6 +122,12 @@ export default function MapView() {
     }
   };
 
+  useEffect(() => {
+    loadCheckins();
+    const interval = setInterval(loadCheckins, 15000); // Refresh every 15 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   if (loading) {
     return (
       <div className="rounded-2xl border-2 border-purple-primary bg-black-secondary p-6">
@@ -134,26 +154,6 @@ export default function MapView() {
     centerLat = sumLat / checkins.length;
     centerLng = sumLng / checkins.length;
   }
-
-  const loadLocationNames = async (markers: CheckinMarker[]) => {
-    // Only geocode visible markers (limit to first 50 for performance)
-    const markersToGeocode = markers.slice(0, 50);
-    
-    for (const marker of markersToGeocode) {
-      try {
-        const locationName = await reverseGeocode(marker.latitude, marker.longitude);
-        
-        // Update the specific marker with location name
-        setCheckins((prevCheckins) =>
-          prevCheckins.map((c) =>
-            c.id === marker.id ? { ...c, location_name: locationName } : c
-          )
-        );
-      } catch (error) {
-        console.error(`Error geocoding location for marker ${marker.id}:`, error);
-      }
-    }
-  };
 
   // Get group colors
   const getGroupColor = (groupName: string): string => {
