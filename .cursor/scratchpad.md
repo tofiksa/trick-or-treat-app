@@ -15,10 +15,10 @@
 4. Prepare final report summarizing identified bugs, fixes, and supporting evidence (tests, rationale).
 
 ## Project Status Board
-- [complete pending user confirmation] Task 1: Geocoding rate-limit performance fix
-- [ready for review] Task 2: Check-in distance calculation edge case fix
-- [ready for review] Task 3: Photo upload success feedback fix
-- [ ] Task 4: Final report compilation
+- [done] Task 1: Geocoding rate-limit performance fix
+- [done] Task 2: Check-in distance calculation edge case fix
+- [done] Task 3: Photo upload success feedback fix
+- [done] Task 4: Final report compilation
 
 ## Executor's Feedback or Assistance Requests
 - npm audit reports esbuild-related moderate vulnerabilities; fix requires `npm audit fix --force` which would upgrade vitest/vite.
