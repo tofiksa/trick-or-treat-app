@@ -43,7 +43,7 @@ export default function MapView() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  const loadLocationNames = async (markers: CheckinMarker[]) => {
+  async function loadLocationNames(markers: CheckinMarker[]) {
     // Only geocode visible markers (limit to first 50 for performance)
     const markersToGeocode = markers.slice(0, 50);
 
@@ -61,9 +61,9 @@ export default function MapView() {
         console.error(`Error geocoding location for marker ${marker.id}:`, error);
       }
     }
-  };
+  }
 
-  const loadCheckins = async () => {
+  async function loadCheckins() {
     try {
       if (!navigator.onLine) {
         console.warn('No internet connection - skipping map data update');
@@ -120,7 +120,7 @@ export default function MapView() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     loadCheckins();

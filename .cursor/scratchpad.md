@@ -23,7 +23,7 @@
 
 ## Executor's Feedback or Assistance Requests
 - npm audit reports esbuild-related moderate vulnerabilities; fix requires `npm audit fix --force` which would upgrade vitest/vite.
-- 2025-11-02: Discovered map regression tied to `loadLocationNames` being defined after early return; moved helper above return to avoid temporal dead zone runtime error.
+- 2025-11-02: Discovered map regression tied to `loadLocationNames` being defined after early return; moved helper above return to avoid temporal dead zone runtime error. Converted loader helpers to function declarations to ensure hoisting in minified builds.
 
 ## Lessons
 - Resetting module-level caches via dedicated helpers keeps asynchronous tests reliable.
