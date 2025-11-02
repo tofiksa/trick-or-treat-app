@@ -19,9 +19,11 @@
 - [done] Task 2: Check-in distance calculation edge case fix
 - [done] Task 3: Photo upload success feedback fix
 - [done] Task 4: Final report compilation
+- [in_progress] Task 5: Investigate dashboard map/check-in loading regression causing `ReferenceError: Cannot access 'v' before initialization`
 
 ## Executor's Feedback or Assistance Requests
 - npm audit reports esbuild-related moderate vulnerabilities; fix requires `npm audit fix --force` which would upgrade vitest/vite.
+- 2025-11-02: Discovered map regression tied to `loadLocationNames` being defined after early return; moved helper above return to avoid temporal dead zone runtime error. Converted loader helpers to function declarations to ensure hoisting in minified builds.
 
 ## Lessons
 - Resetting module-level caches via dedicated helpers keeps asynchronous tests reliable.
