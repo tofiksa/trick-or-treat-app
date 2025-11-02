@@ -17,7 +17,7 @@
 ## Project Status Board
 - [complete pending user confirmation] Task 1: Geocoding rate-limit performance fix
 - [ready for review] Task 2: Check-in distance calculation edge case fix
-- [ ] Task 3: Photo upload success feedback fix
+- [ready for review] Task 3: Photo upload success feedback fix
 - [ ] Task 4: Final report compilation
 
 ## Executor's Feedback or Assistance Requests
@@ -26,3 +26,4 @@
 ## Lessons
 - Resetting module-level caches via dedicated helpers keeps asynchronous tests reliable.
 - Component tests require jsdom environment and aligned path aliases to mirror Next.js runtime.
+- Auto-advancing fake timers simplify Testing Library `waitFor` assertions when validating timer-driven UI states.

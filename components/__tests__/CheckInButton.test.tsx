@@ -1,4 +1,4 @@
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CheckInButton from '../CheckInButton';
 import { calculateDistance } from '@/lib/utils/distance';
@@ -8,13 +8,7 @@ const mockGetUser = vi.fn().mockResolvedValue({
   error: null,
 });
 
-const mockMaybeSingle = vi.fn().mockResolvedValue({
-  data: {
-    latitude: 0,
-    longitude: 0,
-  },
-  error: null,
-});
+const mockMaybeSingle = vi.fn();
 
 const mockSingle = vi.fn().mockResolvedValue({
   data: { id: 'checkin-1' },
@@ -79,11 +73,18 @@ describe('CheckInButton', () => {
   });
 
   it('allows check-ins when previous coordinates are zero', async () => {
-    const onSuccess = vi.fn();
-    const { getByRole } = render(<CheckInButton onCheckInSuccess={onSuccess} />);
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: {
+        latitude: 0,
+        longitude: 0,
+      },
+      error: null,
+    });
 
-    const button = getByRole('button', { name: /sjekk inn/i });
-    fireEvent.click(button);
+    const onSuccess = vi.fn();
+    render(<CheckInButton onCheckInSuccess={onSuccess} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /sjekk inn/i }));
 
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalledTimes(1);
