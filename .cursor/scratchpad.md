@@ -15,13 +15,13 @@
 4. Prepare final report summarizing identified bugs, fixes, and supporting evidence (tests, rationale).
 
 ## Project Status Board
-- [ ] Task 1: Geocoding rate-limit performance fix
+- [ready for review] Task 1: Geocoding rate-limit performance fix
 - [ ] Task 2: Check-in distance calculation edge case fix
 - [ ] Task 3: Photo upload success feedback fix
 - [ ] Task 4: Final report compilation
 
 ## Executor's Feedback or Assistance Requests
-- None currently.
+- npm audit reports esbuild-related moderate vulnerabilities; fix requires `npm audit fix --force` which would upgrade vitest/vite.
 
 ## Lessons
-- None recorded yet.
+- Resetting module-level caches via dedicated helpers keeps asynchronous tests reliable.

@@ -17,6 +17,26 @@ interface GeocodingResult {
 // In-memory cache to avoid repeated API calls
 const locationCache = new Map<string, string>();
 
+const RATE_LIMIT_DELAY_MS = 1100;
+
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+let lastRequestTime = 0;
+let rateLimitPromise: Promise<void> = Promise.resolve();
+
+const acquireRateLimitSlot = async () => {
+  rateLimitPromise = rateLimitPromise.then(async () => {
+    const elapsed = Date.now() - lastRequestTime;
+    if (elapsed < RATE_LIMIT_DELAY_MS) {
+      await delay(RATE_LIMIT_DELAY_MS - elapsed);
+    }
+    lastRequestTime = Date.now();
+  });
+
+  return rateLimitPromise;
+};
+
 // Generate cache key from coordinates
 const getCacheKey = (lat: number, lng: number, precision: number = 4): string => {
   // Round coordinates to reduce cache misses for nearby locations
@@ -75,8 +95,7 @@ export async function reverseGeocode(
 
   try {
     // Respect Nominatim rate limit: 1 request per second
-    // Add a small delay if cache is being actively populated
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+    await acquireRateLimitSlot();
 
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`;
     
@@ -127,12 +146,15 @@ export async function reverseGeocodeBatch(
     const locationName = await reverseGeocode(coord.latitude, coord.longitude);
     results.set(key, locationName);
     
-    // Add delay between requests to respect rate limit
-    if (coordinates.length > 1) {
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-    }
   }
   
   return results;
+}
+
+// Test-only helper to reset caches and timers between runs
+export function __resetGeocodingTestState() {
+  locationCache.clear();
+  lastRequestTime = 0;
+  rateLimitPromise = Promise.resolve();
 }
 
