@@ -119,8 +119,13 @@ export default function CheckInButton({
 				// Continue anyway - we'll just set distance to 0
 			}
 
-			let distance_from_previous = 0;
-			if (lastCheckin?.latitude && lastCheckin?.longitude) {
+		let distance_from_previous = 0;
+		if (
+			lastCheckin?.latitude !== null &&
+			lastCheckin?.latitude !== undefined &&
+			lastCheckin?.longitude !== null &&
+			lastCheckin?.longitude !== undefined
+		) {
 				distance_from_previous = calculateDistance(
 					lastCheckin.latitude,
 					lastCheckin.longitude,
@@ -229,6 +234,7 @@ export default function CheckInButton({
 		setUploadingPhoto(true);
 		setPhotoProgress("Velger bilde...");
 		setError(null);
+		let uploadSucceeded = false;
 
 		try {
 			// Check network connectivity
@@ -353,6 +359,7 @@ export default function CheckInButton({
 						"Bilde ble lastet opp, men kunne ikke lagre referanse. Bildet kan ikke vises i historikken.",
 					);
 				} else {
+					uploadSucceeded = true;
 					setPhotoProgress("✓ Bilde lastet opp vellykket!");
 					// Clear success message after 3 seconds
 					setTimeout(() => {
@@ -379,8 +386,10 @@ export default function CheckInButton({
 			setError(errorMessage);
 			setPhotoProgress("");
 		} finally {
-			// Only clear uploading state after a delay to show success message
-			if (!photoProgress.includes("✓")) {
+			if (uploadSucceeded) {
+				// Keep success state visible; clear uploading but leave progress message for timer to remove
+				setUploadingPhoto(false);
+			} else {
 				setUploadingPhoto(false);
 				setPhotoProgress("");
 			}
