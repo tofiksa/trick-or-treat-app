@@ -19,6 +19,24 @@ export default function LoginPage() {
   const supabase = createClient();
 
   useEffect(() => {
+    const redirectIfLoggedIn = async () => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      const { data: profile } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', authUser.id)
+        .single();
+
+      if (profile) {
+        router.replace('/dashboard');
+      }
+    };
+
+    redirectIfLoggedIn();
     loadGroups();
   }, []);
 

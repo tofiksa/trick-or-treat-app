@@ -20,6 +20,16 @@ export default function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      router.push('/');
+    }
+  };
+
   useEffect(() => {
     loadUserData();
     const interval = setInterval(loadUserData, 10000); // Refresh every 10 seconds
@@ -144,13 +154,24 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-black-primary p-4">
       <main className="mx-auto max-w-md space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-orange-primary">
-            🎃 Dashbord
-          </h1>
-          <div className="flex items-center gap-2 text-purple-light text-sm">
-            <span className="text-2xl">{user?.avatar || '🎃'}</span>
-            <span>{user?.name}</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-orange-primary">🎃 Dashbord</h1>
+          </div>
+          <div className="rounded-xl border border-purple-primary/40 bg-black-secondary px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-purple-light text-sm">
+              Du er logget inn som{' '}
+              <span className="text-orange-primary font-semibold">
+                {user?.avatar || '🎃'} {user?.name}
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm font-semibold text-purple-light hover:text-orange-primary shrink-0"
+            >
+              Logg ut
+            </button>
           </div>
         </div>
 

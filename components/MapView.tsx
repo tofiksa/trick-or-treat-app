@@ -176,7 +176,7 @@ export default function MapView() {
   };
 
   return (
-    <div className="rounded-2xl border-2 border-purple-primary bg-black-secondary p-6">
+    <div className="relative z-0 isolate rounded-2xl border-2 border-purple-primary bg-black-secondary p-6">
       <h2 className="text-xl font-semibold text-purple-light mb-4">
         🗺️ Kart over innlogginger
       </h2>
