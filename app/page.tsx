@@ -9,6 +9,7 @@ import type { GroupStats, PlayerStats } from '@/types/database';
 export default function Home() {
   const [teams, setTeams] = useState<GroupStats[]>([]);
   const [players, setPlayers] = useState<PlayerStats[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,6 +22,10 @@ export default function Home() {
         }
       } catch (err) {
         console.error('Home highscore teaser failed:', err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -73,7 +78,11 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-purple-light mb-4 text-center">
               Topp 3
             </h3>
-            <HighscoreBoard mode="teaser" teams={teams} players={players} />
+            {loading ? (
+              <p className="text-purple-light text-center py-6">Laster…</p>
+            ) : (
+              <HighscoreBoard mode="teaser" teams={teams} players={players} />
+            )}
             <Link
               href="/highscore"
               className="mt-4 h-12 w-full rounded-xl border-2 border-orange-primary bg-transparent text-base font-semibold text-orange-primary transition-all hover:bg-orange-primary/10 active:scale-95 flex items-center justify-center"
