@@ -47,3 +47,13 @@ export type GroupStats = {
   participant_count: number;
 };
 
+export type PlayerStats = {
+  user_id: string;
+  name: string;
+  avatar: string | null;
+  group_id: string | null;
+  group_name: string;
+  total_checkins: number;
+  total_distance: number;
+};
+
