@@ -15,6 +15,15 @@ import {
   type TeamClaim,
 } from '@/lib/login/teamClaims';
 
+const CLAIMS_STATUS_ERROR = 'Kunne ikke hente lagstatus';
+const CLAIMS_STATUS_ERROR_ON_SUBMIT = `${CLAIMS_STATUS_ERROR}. Prøv igjen.`;
+
+function isClaimsLoadError(message: string | null): boolean {
+  return (
+    message === CLAIMS_STATUS_ERROR || message === CLAIMS_STATUS_ERROR_ON_SUBMIT
+  );
+}
+
 export default function LoginPage() {
   const [leader, setLeader] = useState<LeaderName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
@@ -69,12 +78,12 @@ export default function LoginPage() {
     const fresh = await fetchClaims();
     if (fresh === null) {
       setClaimsLoaded(false);
-      setError('Kunne ikke hente lagstatus');
+      setError(CLAIMS_STATUS_ERROR);
       return;
     }
     setClaims(fresh);
     setClaimsLoaded(true);
-    setError((prev) => (prev === 'Kunne ikke hente lagstatus' ? null : prev));
+    setError((prev) => (isClaimsLoadError(prev) ? null : prev));
   };
 
   const loadGroups = async () => {
@@ -143,7 +152,7 @@ export default function LoginPage() {
       const freshClaims = await fetchClaims();
       if (freshClaims === null) {
         setClaimsLoaded(false);
-        setError('Kunne ikke hente lagstatus. Prøv igjen.');
+        setError(CLAIMS_STATUS_ERROR_ON_SUBMIT);
         setLoading(false);
         return;
       }
@@ -230,9 +239,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => {
                       setLeader(name);
-                      setError((prev) =>
-                        prev === 'Kunne ikke hente lagstatus' ? prev : null,
-                      );
+                      setError((prev) => (isClaimsLoadError(prev) ? prev : null));
                       const mine = claims.find((c) => c.leaderName === name);
                       setSelectedGroup(mine?.groupId ?? '');
                     }}
@@ -324,18 +331,24 @@ export default function LoginPage() {
               )}
             </div>
 
-            {error && (
+            {!claimsLoaded && (
+              <div className="rounded-xl bg-red-500/20 border border-red-500 px-4 py-3 text-red-200">
+                <p>
+                  {isClaimsLoadError(error) ? error : CLAIMS_STATUS_ERROR}
+                </p>
+                <button
+                  type="button"
+                  onClick={loadClaims}
+                  className="mt-2 text-sm underline"
+                >
+                  Prøv igjen
+                </button>
+              </div>
+            )}
+
+            {error && claimsLoaded && (
               <div className="rounded-xl bg-red-500/20 border border-red-500 px-4 py-3 text-red-200">
                 <p>{error}</p>
-                {!claimsLoaded && (
-                  <button
-                    type="button"
-                    onClick={loadClaims}
-                    className="mt-2 text-sm underline"
-                  >
-                    Prøv igjen
-                  </button>
-                )}
               </div>
             )}
 
