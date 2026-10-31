@@ -6,12 +6,22 @@ import { createClient } from '@/lib/supabase/client';
 import { Group } from '@/types/database';
 import { translateTeamName, getTeamEmoji } from '@/lib/utils/translations';
 import AvatarSelector from '@/components/AvatarSelector';
+import { LEADERS, type LeaderName } from '@/lib/login/leaders';
+import {
+  buildTeamClaims,
+  getClaimForGroup,
+  isGroupLockedForLeader,
+  resolveLoginTeam,
+  type TeamClaim,
+} from '@/lib/login/teamClaims';
 
 export default function LoginPage() {
-  const [name, setName] = useState('');
+  const [leader, setLeader] = useState<LeaderName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [selectedAvatar, setSelectedAvatar] = useState<string>('🎃');
   const [groups, setGroups] = useState<Group[]>([]);
+  const [claims, setClaims] = useState<TeamClaim[]>([]);
+  const [claimsLoaded, setClaimsLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +48,34 @@ export default function LoginPage() {
 
     redirectIfLoggedIn();
     loadGroups();
+    loadClaims();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchClaims = async (): Promise<TeamClaim[] | null> => {
+    const { data, error: claimsError } = await supabase
+      .from('users')
+      .select('name, group_id')
+      .in('name', [...LEADERS]);
+
+    if (claimsError) {
+      console.error('Error loading claims:', claimsError);
+      return null;
+    }
+    return buildTeamClaims(data ?? []);
+  };
+
+  const loadClaims = async () => {
+    const fresh = await fetchClaims();
+    if (fresh === null) {
+      setClaimsLoaded(false);
+      setError('Kunne ikke hente lagstatus');
+      return;
+    }
+    setClaims(fresh);
+    setClaimsLoaded(true);
+    setError((prev) => (prev === 'Kunne ikke hente lagstatus' ? null : prev));
+  };
 
   const loadGroups = async () => {
     try {
@@ -47,9 +84,7 @@ export default function LoginPage() {
         .from('groups')
         .select('*')
         .order('name');
-      
-      console.log('Groups loaded:', { data, groupsError });
-      
+
       if (groupsError) {
         console.error('Error loading groups:', groupsError);
         // Fallback to default groups if query fails
@@ -57,14 +92,11 @@ export default function LoginPage() {
           { id: 'team-pumpkin', name: 'Lag Gresskar', created_at: new Date().toISOString() },
           { id: 'team-ghost', name: 'Lag Spøkelse', created_at: new Date().toISOString() },
         ];
-        console.log('Using fallback groups:', fallbackGroups);
         setGroups(fallbackGroups);
       } else if (data && data.length > 0) {
-        console.log('Loaded groups from database:', data);
         setGroups(data);
       } else {
         // If no groups exist, use fallback
-        console.log('No groups in database, using fallback');
         const fallbackGroups = [
           { id: 'team-pumpkin', name: 'Team Pumpkin', created_at: new Date().toISOString() },
           { id: 'team-ghost', name: 'Team Ghost', created_at: new Date().toISOString() },
@@ -84,10 +116,22 @@ export default function LoginPage() {
     }
   };
 
+  const myClaim = leader
+    ? claims.find((c) => c.leaderName === leader)
+    : undefined;
+
+  const wouldRequireTeam = leader
+    ? !resolveLoginTeam({
+        leader,
+        selectedGroupId: selectedGroup || null,
+        claims,
+      }).ok
+    : true;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !selectedGroup) {
-      setError('Vennligst skriv inn navnet ditt og velg et lag');
+    if (!leader || !selectedAvatar) {
+      setError('Vennligst velg lagleder og avatar');
       return;
     }
 
@@ -95,9 +139,37 @@ export default function LoginPage() {
     setError(null);
 
     try {
+      // Re-fetch claims right before writing
+      const freshClaims = await fetchClaims();
+      if (freshClaims === null) {
+        setClaimsLoaded(false);
+        setError('Kunne ikke hente lagstatus. Prøv igjen.');
+        setLoading(false);
+        return;
+      }
+      setClaims(freshClaims);
+
+      const resolved = resolveLoginTeam({
+        leader,
+        selectedGroupId: selectedGroup || null,
+        claims: freshClaims,
+      });
+
+      if (!resolved.ok) {
+        if (resolved.reason === 'team_taken') {
+          setError('Dette laget er allerede valgt. Velg det andre laget.');
+        } else {
+          setError('Vennligst velg et lag');
+        }
+        setLoading(false);
+        return;
+      }
+
+      const groupId = resolved.groupId;
+
       // Get or create user
       const { data: { user } } = await supabase.auth.signInAnonymously();
-      
+
       if (!user) {
         throw new Error('Kunne ikke opprette anonym bruker');
       }
@@ -109,21 +181,11 @@ export default function LoginPage() {
         .eq('id', user.id)
         .single();
 
-      // Get group ID from name if needed (backwards compatibility)
-      let groupId = selectedGroup;
-      if (!selectedGroup.includes('-')) {
-        // If it's a group name, find the ID
-        const matchingGroup = groups.find(g => g.id === selectedGroup || g.name === selectedGroup);
-        if (matchingGroup) {
-          groupId = matchingGroup.id;
-        }
-      }
-
       if (existingUser) {
         // Update existing user
         const { error: updateError } = await supabase
           .from('users')
-          .update({ name: name.trim(), group_id: groupId, avatar: selectedAvatar })
+          .update({ name: leader, group_id: groupId, avatar: selectedAvatar })
           .eq('id', user.id);
 
         if (updateError) throw updateError;
@@ -133,7 +195,7 @@ export default function LoginPage() {
           .from('users')
           .insert({
             id: user.id,
-            name: name.trim(),
+            name: leader,
             group_id: groupId,
             avatar: selectedAvatar,
           });
@@ -153,34 +215,62 @@ export default function LoginPage() {
       <main className="w-full max-w-md">
         <div className="flex flex-col items-center gap-8">
           <h1 className="text-4xl font-bold text-orange-primary md:text-5xl">
-            🎃 Bli med i konkurransen
+            🎃 Logg inn som lagleder
           </h1>
-          
+
           <form onSubmit={handleSubmit} className="w-full space-y-6">
             <div>
-              <label htmlFor="name" className="block text-lg font-semibold text-purple-light mb-2">
-                Ditt navn
+              <label className="block text-lg font-semibold text-purple-light mb-2">
+                Velg lagleder
               </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border-2 border-purple-primary bg-black-secondary px-4 py-3 text-orange-light placeholder:text-purple-secondary focus:border-orange-primary focus:outline-none"
-                placeholder="Skriv inn navnet ditt"
-                disabled={loading}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                {LEADERS.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => {
+                      setLeader(name);
+                      setError((prev) =>
+                        prev === 'Kunne ikke hente lagstatus' ? prev : null,
+                      );
+                      const mine = claims.find((c) => c.leaderName === name);
+                      setSelectedGroup(mine?.groupId ?? '');
+                    }}
+                    className={`w-full rounded-xl border-2 px-4 py-4 text-center transition-all cursor-pointer touch-manipulation ${
+                      leader === name
+                        ? 'border-orange-primary bg-orange-primary/20 text-orange-primary font-semibold'
+                        : 'border-purple-primary bg-black-secondary text-purple-light hover:bg-purple-primary/10 active:bg-purple-primary/20'
+                    }`}
+                    disabled={loading}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    {leader === name && '✓ '}
+                    {name}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <AvatarSelector 
-              selectedAvatar={selectedAvatar} 
-              onAvatarSelect={setSelectedAvatar} 
+            <AvatarSelector
+              selectedAvatar={selectedAvatar}
+              onAvatarSelect={setSelectedAvatar}
             />
 
             <div>
               <label className="block text-lg font-semibold text-purple-light mb-2">
-                Velg ditt lag
+                Velg lag
               </label>
+              {myClaim && (
+                <p className="mb-2 text-sm text-purple-light">
+                  Du er tildelt{' '}
+                  {(() => {
+                    const g = groups.find((x) => x.id === myClaim.groupId);
+                    return g
+                      ? `${getTeamEmoji(g.name)} ${translateTeamName(g.name)}`
+                      : 'laget ditt';
+                  })()}
+                </p>
+              )}
               {loadingGroups ? (
                 <div className="rounded-xl border-2 border-purple-primary bg-black-secondary px-4 py-8 text-center text-purple-light">
                   Laster lag...
@@ -191,45 +281,73 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {groups.map((group) => (
-                    <button
-                      key={group.id}
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Team selected:', group.id, group.name);
-                        setSelectedGroup(group.id);
-                        setError(null); // Clear any previous errors
-                      }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      className={`w-full rounded-xl border-2 px-4 py-4 text-left transition-all cursor-pointer touch-manipulation ${
-                        selectedGroup === group.id
-                          ? 'border-orange-primary bg-orange-primary/20 text-orange-primary font-semibold'
-                          : 'border-purple-primary bg-black-secondary text-purple-light hover:bg-purple-primary/10 active:bg-purple-primary/20'
-                      }`}
-                      disabled={loading}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <span className="flex items-center gap-2">
-                        {selectedGroup === group.id && '✓ '}
-                        {getTeamEmoji(group.name)} {translateTeamName(group.name)}
-                      </span>
-                    </button>
-                  ))}
+                  {groups.map((group) => {
+                    const claim = getClaimForGroup(claims, group.id);
+                    const locked = leader
+                      ? isGroupLockedForLeader(claims, group.id, leader)
+                      : Boolean(claim);
+                    const isSelected = selectedGroup === group.id;
+                    const disabled = loading || locked || Boolean(myClaim);
+
+                    return (
+                      <button
+                        key={group.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedGroup(group.id);
+                          setError(null);
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className={`w-full rounded-xl border-2 px-4 py-4 text-left transition-all touch-manipulation ${
+                          locked
+                            ? 'border-purple-primary/40 bg-black-secondary text-purple-secondary opacity-60 cursor-not-allowed'
+                            : isSelected
+                              ? 'border-orange-primary bg-orange-primary/20 text-orange-primary font-semibold'
+                              : 'border-purple-primary bg-black-secondary text-purple-light hover:bg-purple-primary/10 active:bg-purple-primary/20'
+                        } ${!locked && myClaim ? 'cursor-default' : ''} ${
+                          !locked && !myClaim ? 'cursor-pointer' : ''
+                        }`}
+                        disabled={disabled}
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <span className="flex items-center gap-2">
+                          {isSelected && !locked && '✓ '}
+                          {getTeamEmoji(group.name)} {translateTeamName(group.name)}
+                          {claim && locked && ` — Valgt av ${claim.leaderName}`}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
             {error && (
               <div className="rounded-xl bg-red-500/20 border border-red-500 px-4 py-3 text-red-200">
-                {error}
+                <p>{error}</p>
+                {!claimsLoaded && (
+                  <button
+                    type="button"
+                    onClick={loadClaims}
+                    className="mt-2 text-sm underline"
+                  >
+                    Prøv igjen
+                  </button>
+                )}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading || !name.trim() || !selectedGroup}
+              disabled={
+                loading ||
+                !leader ||
+                !selectedAvatar ||
+                !claimsLoaded ||
+                wouldRequireTeam
+              }
               className="h-14 w-full rounded-xl bg-orange-primary text-lg font-semibold text-black-primary transition-all hover:bg-orange-secondary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Bli med...' : 'Start Knask eller Knep'}
@@ -240,4 +358,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
