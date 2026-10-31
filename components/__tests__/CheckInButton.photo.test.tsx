@@ -7,32 +7,52 @@ const mockGetUser = vi.fn().mockResolvedValue({
   error: null,
 });
 
-const mockInsert = vi.fn().mockReturnThis();
+const mockUpload = vi.fn().mockResolvedValue({ error: null });
+const mockMaybeSingleLastCheckin = vi.fn().mockResolvedValue({ data: null, error: null });
+const mockMaybeSingleUser = vi.fn().mockResolvedValue({
+  data: { name: 'Anna' },
+  error: null,
+});
 const mockSingle = vi.fn().mockResolvedValue({
   data: { id: 'checkin-1' },
   error: null,
 });
-
-const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
 const createClientMock = {
   auth: {
     getUser: mockGetUser,
     signInAnonymously: vi.fn(),
   },
-  from: vi.fn().mockReturnValue({
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    maybeSingle: mockMaybeSingle,
-    insert: mockInsert,
-    single: mockSingle,
+  from: vi.fn((table: string) => {
+    if (table === 'users') {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: mockMaybeSingleUser,
+      };
+    }
+    if (table === 'photos') {
+      return {
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      };
+    }
+    // checkins
+    return {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: mockMaybeSingleLastCheckin,
+      insert: vi.fn().mockReturnThis(),
+      single: mockSingle,
+    };
   }),
   storage: {
     from: vi.fn().mockReturnValue({
-      upload: vi.fn().mockResolvedValue({ error: null }),
-      getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/photo.jpg' } }),
+      upload: mockUpload,
+      getPublicUrl: vi.fn().mockReturnValue({
+        data: { publicUrl: 'https://example.com/photo.jpg' },
+      }),
     }),
   },
 };
@@ -52,11 +72,12 @@ vi.mock('browser-image-compression', () => ({
 describe('CheckInButton photo upload feedback', () => {
   const originalConfirm = window.confirm;
   const originalCreateElement = document.createElement.bind(document);
-  let createElementSpy: ReturnType<typeof vi.spyOn>;
+  let createElementSpy: { mockRestore: () => void };
 
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(0);
+    vi.spyOn(Date, 'now').mockReturnValue(0);
 
     window.confirm = vi.fn().mockReturnValue(true);
 
@@ -129,6 +150,11 @@ describe('CheckInButton photo upload feedback', () => {
     fireEvent.click(button);
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+
+    await waitFor(() => {
+      expect(mockUpload).toHaveBeenCalled();
+    });
+    expect(mockUpload.mock.calls[0][0]).toBe('anna_59.900000_10.700000_0.jpg');
 
     const getSuccessMessage = () =>
       screen.getByText((content) => content.includes('Bilde lastet opp vellykket!'));

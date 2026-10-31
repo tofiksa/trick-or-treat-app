@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateDistance } from "@/lib/utils/distance";
+import { buildPhotoFileName } from "@/lib/utils/photoFileName";
 
 interface CheckInButtonProps {
 	onCheckInSuccess: () => void;
@@ -187,7 +188,7 @@ export default function CheckInButton({
 			);
 			if (wantsPhoto && checkin) {
 				// Don't await - let it run in background
-				handlePhotoUpload(checkin.id).catch((photoErr) => {
+				handlePhotoUpload(checkin.id, latitude, longitude).catch((photoErr) => {
 					console.error("Photo upload error:", photoErr);
 					// Error already displayed by handlePhotoUpload
 				});
@@ -230,7 +231,11 @@ export default function CheckInButton({
 		}
 	};
 
-	const handlePhotoUpload = async (checkinId: string) => {
+	const handlePhotoUpload = async (
+		checkinId: string,
+		latitude: number,
+		longitude: number,
+	) => {
 		setUploadingPhoto(true);
 		setPhotoProgress("Velger bilde...");
 		setError(null);
@@ -311,8 +316,21 @@ export default function CheckInButton({
 					throw new Error("Autentisering utløpt. Vennligst oppdater siden.");
 				}
 
+				const { data: profile } = await supabase
+					.from("users")
+					.select("name")
+					.eq("id", user.id)
+					.maybeSingle();
+				const userName = profile?.name ?? "";
+
 				const fileExt = compressedFile.name.split(".").pop() || "jpg";
-				const fileName = `${user.id}/${checkinId}/${Date.now()}.${fileExt}`;
+				const fileName = buildPhotoFileName({
+					userName,
+					latitude,
+					longitude,
+					timestamp: Date.now(),
+					ext: fileExt,
+				});
 
 				// Upload to Supabase Storage with error handling
 				const { error: uploadError } = await supabase.storage
