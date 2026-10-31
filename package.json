@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "migrate": "node scripts/run-migration.mjs",
+    "wipe-db": "node scripts/wipe-database.mjs",
     "test": "vitest run"
   },
   "dependencies": {
