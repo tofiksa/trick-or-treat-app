@@ -1,6 +1,6 @@
 # Check-in photo geotagged filename Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Upload check-in photos with flat storage keys `{sanitizedName}_{lat}_{lng}_{timestamp}.{ext}` using the uploader’s `users.name` and the check-in coordinates.
 
@@ -43,7 +43,7 @@
   - `type BuildPhotoFileNameArgs = { userName: string; latitude: number; longitude: number; timestamp: number; ext: string }`
   - `buildPhotoFileName(args: BuildPhotoFileNameArgs): string`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -100,12 +100,12 @@ describe('buildPhotoFileName', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npm test -- lib/utils/__tests__/photoFileName.test.ts`  
 Expected: FAIL (module not found / `buildPhotoFileName` undefined)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```ts
 // lib/utils/photoFileName.ts
@@ -143,12 +143,12 @@ export function buildPhotoFileName({
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `npm test -- lib/utils/__tests__/photoFileName.test.ts`  
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/utils/photoFileName.ts lib/utils/__tests__/photoFileName.test.ts
@@ -167,7 +167,7 @@ git commit -m "feat(photos): add geotagged photo filename helper"
 - Consumes: `buildPhotoFileName` from `@/lib/utils/photoFileName`
 - Produces: uploads use flat geotagged keys; `handlePhotoUpload(checkinId, latitude, longitude)`
 
-- [ ] **Step 1: Update photo test to require geotagged upload key**
+- [x] **Step 1: Update photo test to require geotagged upload key**
 
 In `CheckInButton.photo.test.tsx`:
 
@@ -210,12 +210,12 @@ await waitFor(() => {
 expect(mockUpload.mock.calls[0][0]).toBe('anna_59.900000_10.700000_0.jpg');
 ```
 
-- [ ] **Step 2: Run photo test — expect FAIL** (still uploads `user-1/checkin-1/...`)
+- [x] **Step 2: Run photo test — expect FAIL** (still uploads `user-1/checkin-1/...`)
 
 Run: `npm test -- components/__tests__/CheckInButton.photo.test.tsx`  
 Expected: FAIL on upload key assertion
 
-- [ ] **Step 3: Implement CheckInButton wiring**
+- [x] **Step 3: Implement CheckInButton wiring**
 
 1. Import `buildPhotoFileName`.
 2. Change call site after confirm to:
@@ -260,7 +260,7 @@ const fileName = buildPhotoFileName({
 
 Do not change compression, progress strings, storage bucket, or `photos` insert fields.
 
-- [ ] **Step 4: Run photo + helper tests**
+- [x] **Step 4: Run photo + helper tests**
 
 Run:
 
@@ -270,7 +270,7 @@ npm test -- lib/utils/__tests__/photoFileName.test.ts components/__tests__/Check
 
 Expected: PASS
 
-- [ ] **Step 5: Typecheck + full suite**
+- [x] **Step 5: Typecheck + full suite**
 
 ```bash
 npx tsc --noEmit
@@ -279,7 +279,7 @@ npm test
 
 Expected: typecheck clean; all tests pass (ignore pre-existing lint noise if any).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/CheckInButton.tsx components/__tests__/CheckInButton.photo.test.tsx
