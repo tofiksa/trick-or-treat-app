@@ -24,13 +24,16 @@ function isClaimsLoadError(message: string | null): boolean {
   );
 }
 
+type ClaimsStatus = 'loading' | 'ready' | 'error';
+
 export default function LoginPage() {
   const [leader, setLeader] = useState<LeaderName | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [selectedAvatar, setSelectedAvatar] = useState<string>('🎃');
   const [groups, setGroups] = useState<Group[]>([]);
   const [claims, setClaims] = useState<TeamClaim[]>([]);
-  const [claimsLoaded, setClaimsLoaded] = useState(false);
+  const [claimsStatus, setClaimsStatus] = useState<ClaimsStatus>('loading');
+  const claimsReady = claimsStatus === 'ready';
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,16 +78,23 @@ export default function LoginPage() {
   };
 
   const loadClaims = async () => {
+    setClaimsStatus('loading');
     const fresh = await fetchClaims();
     if (fresh === null) {
-      setClaimsLoaded(false);
+      setClaimsStatus('error');
       setError(CLAIMS_STATUS_ERROR);
       return;
     }
     setClaims(fresh);
-    setClaimsLoaded(true);
+    setClaimsStatus('ready');
     setError((prev) => (isClaimsLoadError(prev) ? null : prev));
   };
+
+  useEffect(() => {
+    if (!claimsReady || !leader) return;
+    const mine = claims.find((c) => c.leaderName === leader);
+    if (mine?.groupId) setSelectedGroup(mine.groupId);
+  }, [claimsReady, leader, claims]);
 
   const loadGroups = async () => {
     try {
@@ -151,7 +161,7 @@ export default function LoginPage() {
       // Re-fetch claims right before writing
       const freshClaims = await fetchClaims();
       if (freshClaims === null) {
-        setClaimsLoaded(false);
+        setClaimsStatus('error');
         setError(CLAIMS_STATUS_ERROR_ON_SUBMIT);
         setLoading(false);
         return;
@@ -331,7 +341,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            {!claimsLoaded && (
+            {claimsStatus === 'error' && (
               <div className="rounded-xl bg-red-500/20 border border-red-500 px-4 py-3 text-red-200">
                 <p>
                   {isClaimsLoadError(error) ? error : CLAIMS_STATUS_ERROR}
@@ -346,7 +356,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            {error && claimsLoaded && (
+            {error && claimsReady && (
               <div className="rounded-xl bg-red-500/20 border border-red-500 px-4 py-3 text-red-200">
                 <p>{error}</p>
               </div>
@@ -358,7 +368,7 @@ export default function LoginPage() {
                 loading ||
                 !leader ||
                 !selectedAvatar ||
-                !claimsLoaded ||
+                !claimsReady ||
                 wouldRequireTeam
               }
               className="h-14 w-full rounded-xl bg-orange-primary text-lg font-semibold text-black-primary transition-all hover:bg-orange-secondary active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
